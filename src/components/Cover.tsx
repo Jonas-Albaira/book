@@ -19,6 +19,31 @@ export function Cover({ title, subtitle, author, cfg, className = "" }: Props) {
   const A = { fontSize: "4.4cqw" };
   const spine = <div className="absolute inset-y-0 left-0 w-[4%] bg-black/15" />;
 
+  if (cfg.image) {
+    // AI art, full bleed. Unless the art is already lettered, overlay the text on soft scrims for legibility.
+    return (
+      <div className={base} style={style}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- data URL, nothing for next/image to optimise */}
+        <img src={cfg.image} alt={title} className="absolute inset-0 h-full w-full object-cover" />
+        {spine}
+        {!cfg.imageText && (
+          <>
+            <div className="absolute inset-x-0 top-0 h-1/2 bg-linear-to-b from-black/55 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-black/55 to-transparent" />
+            <div className="relative flex h-full flex-col items-center justify-between p-[9%] text-center drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]">
+              <div>
+                <div className="font-bold" style={T}>{title}</div>
+                <div className="mx-auto my-[5%] h-[2px] w-1/4" style={{ background: cfg.accent }} />
+                <div className="opacity-90" style={S}>{subtitle}</div>
+              </div>
+              <div className="font-semibold uppercase tracking-[0.2em]" style={A}>{author}</div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
   switch (cfg.template % 4) {
     case 0: // centred with rule
       return (

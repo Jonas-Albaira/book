@@ -76,6 +76,11 @@ export interface CoverConfig {
   fg: string;
   accent: string;
   font: "serif" | "sans";
+  /** AI-generated cover art as a data URL. When set, it replaces the CSS layout's background. */
+  image?: string;
+  /** The art already contains the title and author lettering, so no text is overlaid. */
+  imageText?: boolean;
+  imagePrompt?: string;
 }
 
 export interface Book {

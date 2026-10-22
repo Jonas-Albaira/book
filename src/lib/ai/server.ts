@@ -9,6 +9,7 @@ import type { AgentKind, SuggestField } from "./client";
 /** Fast model for structured/short tasks; stronger model for long-form prose. */
 const FAST = process.env.OPENAI_MODEL || "gpt-5.4-mini";
 const WRITER = process.env.OPENAI_WRITING_MODEL || "gpt-5.5";
+const IMAGE = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
 
 export class AiError extends Error {
   constructor(message: string, public status = 500) {
@@ -266,6 +267,34 @@ Formatting: plain text with **bold**, *italic*, and "- " bullet lines only; sepa
 Also return exactly 7 backend keyword phrases buyers would search for (don't repeat words from the title).`,
       signal,
     );
+  },
+
+  /** Portrait front-cover art. WebP keeps the data URL small, since books live in localStorage. */
+  async coverImage(b, a, signal) {
+    const lettered = !!a.withText;
+    const style = String(a.prompt ?? "").trim();
+    const res = await openai().images.generate(
+      {
+        model: IMAGE,
+        prompt: `Design the front cover artwork for a ${b.genre === "fiction" ? "novel" : "non-fiction book"}, portrait orientation, full bleed, professional and commercially appealing for Amazon KDP.
+${context(b)}
+${style ? `\nArt direction from the author: ${style}\n` : ""}
+${
+  lettered
+    ? `Include the lettering, spelled exactly: the title "${b.title ?? b.topic}"${b.subtitle ? `, the subtitle "${b.subtitle}"` : ""}${b.authorName ? `, and the author name "${b.authorName}"` : ""}. Use clean, legible, genre-appropriate typography and no other text.`
+    : "Do not include any text, letters, words or logos. Leave calm, uncluttered space in the top third for the title and at the bottom for the author name, which will be added later."
+}`,
+        size: "1024x1536",
+        quality: "medium",
+        output_format: "webp",
+        output_compression: 80,
+        n: 1,
+      },
+      { signal },
+    );
+    const data = res.data?.[0]?.b64_json;
+    if (!data) throw new AiError("The image model returned no image.", 502);
+    return { image: `data:image/webp;base64,${data}` };
   },
 
   /** Short suggestions for a single form field. The book may be a partial draft (e.g. from the new-book wizard). */

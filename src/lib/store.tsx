@@ -33,7 +33,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (ready) localStorage.setItem(KEY, JSON.stringify(books));
+    if (!ready) return;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(books));
+    } catch {
+      // Most likely the storage quota, which AI cover images (~200 KB each) make easier to hit.
+      window.dispatchEvent(new CustomEvent("ai-error", { detail: "Couldn't save: browser storage is full. Delete an old book or remove some AI cover art." }));
+    }
   }, [books, ready]);
 
   const createBook: Store["createBook"] = useCallback((init) => {

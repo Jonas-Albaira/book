@@ -28,6 +28,23 @@ export function toMarkdown(b: Book) {
   return parts.filter(Boolean).join("\n\n") + "\n";
 }
 
+/**
+ * Full-bleed cover page. AI art is embedded as-is (with the text overlaid unless the art is lettered);
+ * CSS covers export as the "Classic" layout in the chosen colours, since the other layouts rely on Tailwind.
+ */
+function coverHtml(b: Book) {
+  const c = b.cover;
+  if (!c) return "";
+  const font = c.font === "serif" ? "Georgia, serif" : "Helvetica, Arial, sans-serif";
+  const text = `<div class="cover-text" style="color:${c.fg};font-family:${font}">
+<div><div class="cover-title">${esc(b.title ?? b.topic)}</div><div class="cover-rule" style="background:${c.accent}"></div>${b.subtitle ? `<div class="cover-sub">${esc(b.subtitle)}</div>` : ""}</div>
+<div class="cover-author">${esc(b.authorName ?? "")}</div></div>`;
+  if (c.image) {
+    return `<section class="cover"><img src="${c.image}" alt="">${c.imageText ? "" : `<div class="cover-scrim"></div>${text}`}</section>`;
+  }
+  return `<section class="cover" style="background:${c.bg}">${text}</section>`;
+}
+
 export function toHtml(b: Book) {
   const paras = (t: string) => t.trim().split(/\n{2,}/).map((p) => `<p>${esc(p)}</p>`).join("\n");
   const chapters = (b.outline ?? [])
@@ -46,7 +63,16 @@ body { font-family: Georgia, serif; font-size: 11.5pt; line-height: 1.6; max-wid
 .chapter { page-break-before: always; } .num { text-transform: uppercase; letter-spacing: .2em; font-size: 9pt; color: #888; margin-top: 2in }
 h1 { font-size: 22pt } h2 { font-size: 13pt; margin-top: 1.6em } p { text-indent: 1.5em; margin: 0 0 .4em; text-align: justify }
 h2 + p, h1 + p { text-indent: 0 }
+@page cover { margin: 0 }
+.cover { page: cover; position: relative; width: 6in; height: 9in; margin: 0 auto 2em; overflow: hidden; page-break-after: always; print-color-adjust: exact; -webkit-print-color-adjust: exact }
+.cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover }
+.cover-scrim { position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.55), transparent 50%, transparent 75%, rgba(0,0,0,.55)) }
+.cover-text { position: relative; height: 100%; box-sizing: border-box; padding: .6in; display: flex; flex-direction: column; justify-content: space-between; text-align: center }
+.cover-title { font-size: 34pt; font-weight: bold; line-height: 1.05; margin-top: .4in } .cover-sub { font-size: 13pt; line-height: 1.35; opacity: .9 }
+.cover-rule { width: 25%; height: 2px; margin: .3in auto } .cover-author { font-size: 13pt; letter-spacing: .2em; text-transform: uppercase }
+@media print { .cover { margin: 0 } }
 </style></head><body>
+${coverHtml(b)}
 <div class="title"><h1>${esc(b.title ?? b.topic)}</h1>${b.subtitle ? `<h3>${esc(b.subtitle)}</h3>` : ""}<p style="text-indent:0;margin-top:3em">${esc(b.authorName ?? "")}</p></div>
 <div class="toc"><h1>Contents</h1><ol>${(b.outline ?? []).map((c) => `<li>${esc(c.title)}</li>`).join("")}</ol></div>
 ${chapters}

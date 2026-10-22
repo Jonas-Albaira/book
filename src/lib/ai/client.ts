@@ -98,4 +98,7 @@ export const writeSection = (b: Book, chapterId: string, sectionId: string, onCh
 export const runAgent = (kind: AgentKind, text: string, b: Book, surround: { before?: string; after?: string } = {}) =>
   call<{ result: string; note: string }>("agent", b, { kind, text, ...surround });
 
+export const generateCoverImage = (b: Book, prompt: string, withText: boolean) =>
+  call<{ image: string }>("coverImage", b, { prompt, withText }).then((r) => r.image);
+
 export const generateDescription = (b: Book) => call<{ description: string; keywords: string[] }>("description", b);
